@@ -6,7 +6,8 @@
   button.addEventListener('click', async () => {
     let stored; try { stored = JSON.parse(localStorage.getItem('dailyglow-auth-v3') || 'null'); } catch { stored = null; }
     if (!stored?.access_token) { status.textContent = 'Please log in to DailyGlow first.'; return; }
-    if (stored.expires_at && Date.now() / 1000 >= stored.expires_at - 60) { status.textContent = 'Your session expired. Please log in again.'; return; }\n    button.disabled = true;
+    if (stored.expires_at && Date.now() / 1000 >= stored.expires_at - 60) { status.textContent = 'Your session expired. Please log in again.'; return; }
+    button.disabled = true;
     status.textContent = 'Opening secure Stripe test checkout…';
     try {
       const response = await fetch('https://qiblcmoqjxgolakdrgpx.supabase.co/functions/v1/create-plus-checkout', {
