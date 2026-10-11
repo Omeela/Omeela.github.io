@@ -6,6 +6,7 @@
 const URL='https://qiblcmoqjxgolakdrgpx.supabase.co';
 const KEY='sb_publishable_2KFMcImwhM4W3Y8symtolg_uKFxjJAE';
 const AUTH_KEY='dailyglow-auth-v3';
+const REDIRECT='https://omeela.github.io/dailyglow/';
 const $=id=>document.getElementById(id);
 let session=null, user=null, pending=false, timer=null, ready=false;
 const message=t=>{$('authMessage').textContent=t};
@@ -75,7 +76,7 @@ $('signUp').addEventListener('click',()=>credentials('signup'));
 $('signIn').addEventListener('click',()=>credentials('login'));
 $('resetPassword').addEventListener('click',async()=>{
  const email=$('authEmail').value.trim();if(!email){message('Enter your email address first.');return}
- try{await auth('recover',{email});message('If this email has an account, a password-reset email will be sent.')}catch(e){message(e.message)}
+ try{await api('/auth/v1/recover?redirect_to='+encodeURIComponent(REDIRECT),{method:'POST',body:{email}});message('If this email has an account, a password-reset email will be sent.')}catch(e){message(e.message)}
 });
 $('uploadGuest').addEventListener('click',async()=>{
  if(!user||ready)return;
@@ -93,6 +94,15 @@ $('signOut').addEventListener('click',async()=>{
  try{const guest=JSON.parse(localStorage.getItem('dailyglow-data-v1'));data=validPayload(guest)?guest:defaults()}catch{data=defaults()}
  render();display();message('Logged out. Your guest progress is available on this device.');
 });
-try{const stored=JSON.parse(localStorage.getItem(AUTH_KEY));if(stored?.access_token){session=stored;user=stored.user}}catch{}
-display();if(session)loadAccount();
+$('saveNewPassword').addEventListener('click',async()=>{
+ const password=$('newPassword').value;
+ if(password.length<12){message('Use a new password of at least 12 characters.');return}
+ try{await api('/auth/v1/user',{method:'PUT',authenticated:true,body:{password}});$('newPassword').value='';$('passwordRecovery').hidden=true;history.replaceState(null,'',location.pathname);message('Password updated. Your account is ready.')}catch(e){message('Password update failed: '+e.message)}
+});
+const fragment=new URLSearchParams(location.hash.slice(1));
+if(fragment.get('type')==='recovery'&&fragment.get('access_token')){
+ session={access_token:fragment.get('access_token'),refresh_token:fragment.get('refresh_token'),expires_at:Math.floor(Date.now()/1000)+Number(fragment.get('expires_in')||3600)};
+ api('/auth/v1/user',{authenticated:true}).then(u=>{user=u;session.user=u;localStorage.setItem(AUTH_KEY,JSON.stringify(session));$('passwordRecovery').hidden=false;display();message('Set your new DailyGlow password below.');history.replaceState(null,'',location.pathname)}).catch(e=>message('Recovery link could not be verified: '+e.message));
+}else try{const stored=JSON.parse(localStorage.getItem(AUTH_KEY));if(stored?.access_token){session=stored;user=stored.user}}catch{}
+display();if(session&&user)loadAccount();
 })();
