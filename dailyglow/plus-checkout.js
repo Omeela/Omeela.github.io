@@ -26,3 +26,20 @@
     }
   });
 })();
+
+/* Secure self-service billing portal (Stripe sandbox). */
+(()=>{
+ const button=document.getElementById('manageBilling'),status=document.getElementById('billingStatus');
+ if(!button||!status)return;
+ button.addEventListener('click',async()=>{
+ let s;try{s=JSON.parse(localStorage.getItem('dailyglow-auth-v3')||'null')}catch{}
+ if(!s?.access_token){status.textContent='Please sign in first.';return}
+ button.disabled=true;status.textContent='Opening secure billing management…';
+ try{
+ const res=await fetch('https://qiblcmoqjxgolakdrgpx.supabase.co/functions/v1/create-billing-portal',{method:'POST',headers:{'Authorization':'Bearer '+s.access_token,'Content-Type':'application/json'},body:'{}'});
+ const result=await res.json();if(!res.ok||!result.url)throw Error(result.message||'Billing unavailable');
+ const u=new URL(result.url);if(u.protocol!=='https:'||!u.hostname.endsWith('.stripe.com'))throw Error('Unexpected billing address');
+ window.location.assign(u.href);
+ }catch(e){status.textContent=e.message||'Could not open billing management';button.disabled=false}
+ });
+})();
