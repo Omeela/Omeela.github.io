@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="An interactive portfolio sample for editing and testing a developer workshop landing page."><title>Workshop Desk | Publishing demo</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f5f3eb;color:#182f32;font:17px/1.5 system-ui,sans-serif}main,header{max-width:1120px;margin:auto;padding:24px}header{border-bottom:1px solid #bec8bf;font-weight:700}h1{font:clamp(38px,6vw,72px)/1.06 Georgia,serif;margin:18px 0}h2{font:32px/1.1 Georgia,serif;margin:0 0 18px}section{padding:26px;background:white;border-radius:8px}article{background:#133d3d;color:#eff8d5;padding:32px;border-radius:6px}small{letter-spacing:.07em}form{display:grid;gap:10px}label{font-weight:650}input,textarea,button{font:inherit;padding:10px;border:1px solid #6a7d78;border-radius:4px;width:100%}textarea{min-height:88px}button{background:#d6ed99;color:#19382a;cursor:pointer;font-weight:700}input:focus-visible,textarea:focus-visible,button:focus-visible{outline:3px solid #be6800;outline-offset:2px}.grid{display:grid;grid-template-columns:minmax(220px,2fr) minmax(0,3fr);gap:18px;margin:20px 0}#log{padding-left:22px}button:disabled{opacity:.55}@media(max-width:720px){.grid{grid-template-columns:1fr}main,header,section,article{padding:18px}}
+</style><header>Workshop Desk</header><main><h1>Workshop publishing studio</h1><p>Edit a developer workshop, preview the draft, then publish it in this browser. Test a registration with a sample email.</p>
+<div class="grid"><section><h2>Page editor</h2><form id="editor"><label for="heading">Workshop title</label><input id="heading" required maxlength="80"><label for="summary">Description</label><textarea id="summary" required maxlength="240"></textarea><button>Publish changes</button></form><p id="status" role="status"></p></section>
+<section><h2>Workshop page</h2><article><small id="mode">PUBLISHED VIEW</small><h2 id="title"></h2><p id="intro"></p><form id="register"><label for="email">Sample email</label><input id="email" type="email" placeholder="tester@example.com" required><button id="signup">Test registration</button></form><p id="result" role="status"></p></article></section></div>
+<section><h2>Event inspector</h2><p>Events appear here for this session. Email addresses are never stored or sent.</p><ol id="log"></ol></section></main>
+<script>
+const get=id=>document.getElementById(id);
+const defaults={title:'Debug your first API request',intro:'A hands-on developer workshop covering request headers, response codes, and common integration errors.'};
+let published=defaults;
+try{const saved=JSON.parse(localStorage.getItem('workshop-desk-v1'));if(saved && ['title','intro'].every(key=>typeof saved[key]==='string' && saved[key].trim()))published=saved;}catch{}
+get('heading').value=published.title;get('summary').value=published.intro;
+function render(){
+ const title=get('heading').value.trim(),intro=get('summary').value.trim();
+ const draft=title!==published.title || intro!==published.intro;
+ get('mode').textContent=draft?'DRAFT PREVIEW':'PUBLISHED VIEW';
+ get('title').textContent=title;get('intro').textContent=intro;
+ get('signup').disabled=draft;
+}
+function record(name){const item=document.createElement('li');item.textContent=name+' · '+new Date().toLocaleTimeString();get('log').prepend(item);}
+get('editor').oninput=()=>{get('status').textContent='';get('result').textContent='';render();};
+get('editor').onsubmit=e=>{e.preventDefault();
+ const page={title:get('heading').value.trim(),intro:get('summary').value.trim()};
+ if(!page.title||!page.intro){get('status').textContent='Enter a title and a description.';return;}
+ try{localStorage.setItem('workshop-desk-v1',JSON.stringify(page));}catch{get('status').textContent='Browser storage is unavailable. Your draft is still here.';return;}
+ published=page;render();record('workshop_published');get('status').textContent='Published in this browser.';};
+get('register').onsubmit=e=>{e.preventDefault();if(get('signup').disabled)return;record('registration_complete');get('register').reset();get('result').textContent='Test registration recorded.';};
+render();record('page_view');
+</script></html>
